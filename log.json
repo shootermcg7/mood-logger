@@ -1,0 +1,27 @@
+[
+  {
+    "comment": "Feeling like a full-stack wizard",
+    "mood": 5,
+    "timestamp": "2025-03-30T15:50:00.000Z"
+  },
+  {
+    "comment": "Feeling excellent",
+    "mood": 5,
+    "timestamp": "2025-03-30T15:55:00.000Z"
+  },
+  {
+    "comment": "Feeling epic",
+    "mood": 5,
+    "timestamp": "2025-03-30T15:58:39.859Z"
+  },
+  {
+    "comment": "Feeling stupendous",
+    "mood": 5,
+    "timestamp": "2025-03-30T18:19:25.430Z"
+  },
+  {
+    "comment": "Feeling curious",
+    "mood": 3,
+    "timestamp": "2025-03-31T07:49:46.347Z"
+  }
+]

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Mood Logger</title>
+  <style>
+:root {
+  --bg: white;
+  --text: black;
+  --card: #f0f0f0;
+}
+
+[data-theme="dark"] {
+  --bg: #121212;
+  --text: #f1f1f1;
+  --card: #1e1e1e;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: Arial, sans-serif;
+  max-width: 600px;
+  margin: auto;
+  padding: 2rem;
+}
+
+li {
+  background: var(--card);
+  color: var(--text);
+}
+  </style>
+</head>
+<body>
+  <h1>Log Your Mood</h1>
+  <label style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+  <input type="checkbox" id="themeToggle" />
+  Dark Mode
+</label>
+  <form id="moodForm">
+    <label for="comment">Comment:</label>
+    <input type="text" id="comment" required />
+
+    <label for="mood">Mood (1-5):</label>
+    <input type="number" id="mood" min="1" max="5" required />
+
+    <button type="submit">Submit</button>
+  </form>
+
+  <h2>Past Logs</h2>
+  <h2>Your Mood Summary</h2>
+<div id="summary"></div>
+<div id="agentMessage" style="margin-top: 1rem; font-style: italic; color: #555;"></div>
+
+  <ul id="logList"></ul>
+
+
+<script>
+  const moodForm = document.getElementById('moodForm');
+  const logList = document.getElementById('logList');
+
+  const moodEmojis = {
+    1: "😞",
+    2: "😐",
+    3: "🙂",
+    4: "😄",
+    5: "🤩"
+  };
+
+  // Submit handler
+  moodForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const comment = document.getElementById('comment').value;
+    const mood = parseInt(document.getElementById('mood').value);
+
+    const res = await fetch('/comments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ comment, mood })
+    });
+
+    if (res.ok) {
+      alert('Mood saved!');
+      moodForm.reset();
+      loadLogs();
+    } else {
+      alert('Failed to save mood.');
+    }
+  });
+function generateAgentFeedback(logs) {
+  if (logs.length < 3) return '';
+
+  const recent = logs.slice(0, 3); // already sorted by newest first
+  const moods = recent.map(log => log.mood);
+
+  const allLow = moods.every(m => m <= 2);
+  const allHigh = moods.every(m => m >= 4);
+
+  if (allLow) {
+    return "🧠 Agent: You've had a few tough moods lately. Maybe a quick walk or chat could help?";
+  }
+  if (allHigh) {
+    return "🔥 Agent: You've been feeling great lately. Keep riding that wave!";
+  }
+
+  return '';
+}
+  // Load logs from server
+  async function loadLogs() {
+    const res = await fetch('/comments');
+    const data = await res.json();
+    logList.innerHTML = '';
+
+    data.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+data.forEach(log => {
+  const emoji = moodEmojis[log.mood] || '';
+  const date = new Date(log.timestamp).toLocaleString();
+  const item = document.createElement('li');
+
+  item.innerHTML = `
+    ${emoji} Mood ${log.mood} — ${date} — ${log.comment}
+    <button onclick="deleteLog('${log.timestamp}')">🗑️</button>
+  `;
+
+  logList.appendChild(item);
+});
+ loadAgentWhisper();
+  }
+    // Generate and show agent insight
+async function loadAgentWhisper() {
+  const res = await fetch('/agent-feedback');
+  const data = await res.json();
+  document.getElementById('agentMessage').textContent = data.message || '';
+}
+  async function deleteLog(timestamp) {
+  const res = await fetch(`/comments/${timestamp}`, { method: 'DELETE' });
+
+  if (res.ok) {
+    alert('Comment deleted!');
+    loadLogs();
+  } else {
+    alert('Failed to delete comment.');
+  }
+}
+async function loadSummary() {
+  const res = await fetch('/summary');
+  const data = await res.json();
+
+  const emojiMap = {
+    1: "😞",
+    2: "😐",
+    3: "🙂",
+    4: "😄",
+    5: "🤩"
+  };
+
+  const summaryDiv = document.getElementById('summary');
+
+  if (data.count === 0) {
+    summaryDiv.textContent = "No moods logged yet.";
+    return;
+  }
+
+  summaryDiv.textContent = `You've logged ${data.count} moods. 
+  Average mood: ${data.average}. 
+  Most common mood: ${emojiMap[data.mostCommon]} (${data.mostCommon})`;
+}
+
+  loadLogs();
+  loadSummary();
+  loadAgentWhisper();
+   const toggle = document.getElementById('themeToggle');
+  const currentTheme = localStorage.getItem('theme');
+  if (currentTheme === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    toggle.checked = true;
+  }
+
+  toggle.addEventListener('change', () => {
+    if (toggle.checked) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.setAttribute('data-theme', 'light');
+      localStorage.setItem('theme', 'light');
+    }
+  });
+</script>
+</body>
+</html>
